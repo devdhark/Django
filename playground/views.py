@@ -5,8 +5,8 @@ from store.models import Collection, Customer, OrderItem, Product
 
 
 def say_hello(request):
-    queryset = Product.objects.filter(inventory=F("collection__id"))
+    queryset = Product.objects.filter(
+        id__in=OrderItem.objects.values("product_id").distinct()
+    ).order_by("title")
 
-    return render(
-        request, "hello.html", {"name": "Devdhar", "products": list(queryset)}
-    )
+    return render(request, "hello.html", {"name": "Devdhar", "products": queryset})
