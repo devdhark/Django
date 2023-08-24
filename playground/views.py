@@ -1,18 +1,14 @@
 from django.shortcuts import render
-from django.db.models import (
-    Q,
-    F,
-    Value,
-    Func,
-    Count,
-    ExpressionWrapper,
-    DecimalField,
-    Max,
-)
-from store.models import Collection, Customer, Product
+from django.contrib.contenttypes.models import ContentType
+from store.models import Product
+from tags.models import TaggedItem
 
 
 def say_hello(request):
-    queryset = Collection.objects.annotate(count=Count("product__id"))
+    content_type = ContentType.objects.get_for_model(Product)
 
-    return render(request, "hello.html", {"name": "Devdhar", "result": list(queryset)})
+    queryset = TaggedItem.objects.select_related("tag").filter(
+        content_type=content_type, object_id=1
+    )
+
+    return render(request, "hello.html", {"name": "Devdhar", "tags": list(queryset)})
