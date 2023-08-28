@@ -1,4 +1,10 @@
+from typing import Any
 from django.contrib import admin
+from django.db.models import Count
+from django.db.models.query import QuerySet
+from django.http.request import HttpRequest
+from django.urls import reverse
+from django.utils.html import format_html, urlencode
 from . import models
 
 
@@ -19,12 +25,31 @@ class ProductAdmin(admin.ModelAdmin):
         return "OK"
 
 
+@admin.register(models.Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ["id", "placed_at", "customer"]
+
+
+@admin.register(models.Collection)
+class CollectionAdmin(admin.ModelAdmin):
+    list_display = ["title", "products_count"]
+
+    @admin.display(ordering="products_count")
+    def products_count(self, collection):
+        url = (
+            reverse("admin:store_product_changelist")
+            + "?"
+            + urlencode({"collection__id": str(collection.id)})
+        )
+        return format_html('<a href="{}">{}</a>', url, collection.products_count)
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        return super().get_queryset(request).annotate(products_count=Count("product"))
+
+
 @admin.register(models.Customer)
 class CustomerAdmin(admin.ModelAdmin):
     list_display = ["first_name", "last_name", "membership"]
     list_editable = ["membership"]
     ordering = ["first_name", "last_name"]
     list_per_page = 10
-
-
-admin.site.register(models.Collection)
